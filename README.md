@@ -10,7 +10,7 @@ Run `npm run dev`, then open http://localhost:4173. There are no dependencies or
 
 - Daily Circuit: Signal Hunt → Pocket Sudoku → Read & Recall
 - Mental Gym: Signal Hunt, Sequence Lab, Rule Switch
-- Mental Games: 4 × 4 Pocket Sudoku, 9 × 9 Sudoku, a 5 × 5 word-square Mini Crossword, Word Search
+- Mental Games: 4 × 4 Pocket Sudoku, 9 × 9 Sudoku, a 5 × 5 Mini Crossword with distinct crossing Across and Down answers, Word Search
 - Learning Lab: Read & Recall, Recall Cards, a personal study-set editor
 
 The date selects one of three reading passages and rotates Sudoku digits. This is a starter content library, not a source of unlimited new daily puzzles. Gym rounds vary each play. The crossword, word search, and built-in cards currently use fixed starter content.

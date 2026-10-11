@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {POCKET,SUDOKU,CROSSWORD,WORDS,localDay,completedToday,streak,validateGrid,wordPath,makeWordGrid,readState} from '../dist/assets/core.js';
+import {POCKET,SUDOKU,CROSSWORD,crosswordEntries,WORDS,localDay,completedToday,streak,validateGrid,wordPath,makeWordGrid,readState} from '../dist/assets/core.js';
 
 for(const config of [POCKET,SUDOKU])test(`${config.size} × ${config.size} Sudoku has valid solution and matching givens`,()=>{
   const {size,box,puzzle,solution}=config;
@@ -23,7 +23,20 @@ for(const config of [POCKET,SUDOKU])test(`${config.size} × ${config.size} Sudok
   }
   solve();assert.equal(solutions,1,'The starter puzzle must have exactly one solution');
 });
-test('crossword words match both across and down',()=>CROSSWORD.forEach((word,i)=>assert.equal(CROSSWORD.map(row=>row[i]).join(''),word)));
+test('mini crossword has distinct, clued Across and Down answers with shared letters',()=>{
+  const {entries,numbers}=crosswordEntries(),grid=CROSSWORD.grid.join('');
+  assert.equal(CROSSWORD.grid.length,CROSSWORD.size);
+  CROSSWORD.grid.forEach(row=>assert.equal(row.length,CROSSWORD.size));
+  assert.equal(entries.length,10);
+  assert.equal(entries.filter(e=>e.direction==='across').length,5);
+  assert.equal(entries.filter(e=>e.direction==='down').length,5);
+  assert.equal(new Set(entries.map(e=>e.answer)).size,entries.length,'No answer repeats across directions');
+  assert.equal(new Set(entries.map(e=>e.clue)).size,entries.length,'Every entry has its own clue');
+  entries.forEach(e=>{assert.ok(e.clue);assert.ok(e.cells.length>=3);assert.equal(e.cells.map(i=>grid[i]).join(''),e.answer);assert.equal(numbers[e.cells[0]],e.number);});
+  [...grid].forEach((letter,i)=>{const crossing=entries.filter(e=>e.cells.includes(i));assert.equal(crossing.length,letter==='#'?0:2,'Every open square belongs to an Across and a Down answer');if(letter!=='#'){assert.deepEqual(crossing.map(e=>e.direction).sort(),['across','down']);crossing.forEach(e=>assert.equal(e.answer[e.cells.indexOf(i)],letter));}});
+  assert.deepEqual(entries.filter(e=>e.direction==='across').map(e=>e.number),[1,4,6,7,8]);
+  assert.deepEqual(entries.filter(e=>e.direction==='down').map(e=>e.number),[1,2,3,4,5]);
+});
 test('word search contains every listed word on an unbroken line',()=>{
   const grid=makeWordGrid();for(const word of WORDS){let found=false;
     for(let a=0;a<64;a++)for(let b=0;b<64;b++){const letters=wordPath(a,b).map(i=>grid[i]).join('');if(letters===word||[...letters].reverse().join('')===word)found=true;}

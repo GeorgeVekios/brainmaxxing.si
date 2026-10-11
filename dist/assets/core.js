@@ -13,7 +13,31 @@ export const ACTIVITIES = [
 export const CIRCUIT = ['signal','pocket','read'];
 export const POCKET = {size:4,box:2,puzzle:'1204041001404001',solution:'1234341221434321'};
 export const SUDOKU = {size:9,box:3,puzzle:'530070000600195000098000060800060003400803001700020006060000280000419005000080079',solution:'534678912672195348198342567859761423426853791713924856961537284287419635345286179'};
-export const CROSSWORD = ['HEART','EMBER','ABUSE','RESIN','TREND'];
+export const CROSSWORD = {
+  size:5,
+  grid:['#BAD#','MONEY','EAGLE','TREAT','#DRY#'],
+  clues:{
+    across:{BAD:'Opposite of good',MONEY:'What dollars and euros are',EAGLE:'Large bird with a hooked beak',TREAT:'A little reward, like a cookie',DRY:'Without moisture'},
+    down:{BOARD:'Get on a train or plane',ANGER:'The feeling when you are furious',DELAY:'Make something happen later',MET:'Was introduced to someone',YET:'So far, in “not ___”'},
+  },
+};
+export function crosswordEntries(puzzle=CROSSWORD){
+  const {size,grid,clues}=puzzle,cells=grid.join(''),entries=[],numbers={};let number=0;
+  for(let i=0;i<cells.length;i++){
+    if(cells[i]==='#')continue;
+    const across=(i%size===0||cells[i-1]==='#')&&i%size<size-1&&cells[i+1]!=='#';
+    const down=(i<size||cells[i-size]==='#')&&i+size<cells.length&&cells[i+size]!=='#';
+    if(!across&&!down)continue;numbers[i]=++number;
+    for(const direction of ['across','down']){
+      if(direction==='across'?!across:!down)continue;
+      const indexes=[];let j=i;
+      while(j<cells.length&&cells[j]!=='#'&&(direction==='down'||Math.floor(j/size)===Math.floor(i/size))){indexes.push(j);j+=direction==='across'?1:size;}
+      const answer=indexes.map(index=>cells[index]).join('');
+      entries.push({id:`${number}-${direction}`,number,direction,cells:indexes,answer,clue:clues[direction][answer]});
+    }
+  }
+  return {entries,numbers};
+}
 export const WORDS = ['FOCUS','LEARN','MIND','PAUSE','GROW'];
 export function localDay(date=new Date()){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
 export function readState(storage){try {const s=JSON.parse(storage.getItem('brainmaxxing.v1'));return s && Array.isArray(s.results) && Array.isArray(s.cards) ? s : {results:[],cards:[]};}catch{return {results:[],cards:[]};}}

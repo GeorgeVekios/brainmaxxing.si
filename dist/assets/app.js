@@ -1,4 +1,4 @@
-import {ACTIVITIES,CIRCUIT,POCKET,SUDOKU,CROSSWORD,WORDS,localDay,readState,completedToday,streak,validateGrid,wordPath,makeWordGrid} from './core.js';
+import {ACTIVITIES,CIRCUIT,POCKET,SUDOKU,CROSSWORD,crosswordEntries,WORDS,localDay,readState,completedToday,streak,validateGrid,wordPath,makeWordGrid} from './core.js';
 
 const $=s=>document.querySelector(s);
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -28,7 +28,7 @@ const art=(kind)=>{
   if(kind==='read'||kind==='custom')return wrap('#e0ddef',`<g transform="rotate(-8 80 80)"><rect x="42" y="28" width="84" height="108" rx="5" fill="#b7aecf"/><rect x="35" y="23" width="84" height="108" rx="5" fill="#fffdfa" stroke="#85779d"/><path d="M50 45h44M50 59h54M50 70h54M50 81h37M50 101h54M50 112h44" stroke="#a59ab8" stroke-width="3"/><path d="M50 81h28" stroke="#ed6b36" stroke-width="7" opacity=".65"/></g>`);
   if(kind==='sequence')return wrap('#d5e8b6',Array.from({length:9},(_,i)=>`<rect x="${31+i%3*35}" y="${31+Math.floor(i/3)*35}" width="28" height="28" rx="6" fill="${[0,4,7].includes(i)?'#ed6b36':'#95af74'}"/>`).join(''));
   if(kind==='rules')return wrap('#d5e8b6','<circle cx="58" cy="58" r="23" fill="#ed6b36"/><rect x="89" y="39" width="36" height="36" fill="#6683a1"/><circle cx="109" cy="109" r="21" fill="#6683a1"/><rect x="38" y="88" width="39" height="39" fill="#ed6b36"/>');
-  if(kind==='crossword')return wrap('#f1df9d',`<g transform="translate(25 25)">${Array.from({length:25},(_,i)=>`<rect x="${i%5*22}" y="${Math.floor(i/5)*22}" width="22" height="22" fill="${[3,9,15,21].includes(i)?'#75633d':'#fff7d8'}" stroke="#a89660"/>${i<3?`<text x="${i*22+11}" y="16" text-anchor="middle" font-family="Georgia" font-size="15" fill="#75633d">${'MAX'[i]}</text>`:''}`).join('')}</g>`);
+  if(kind==='crossword')return wrap('#f1df9d',`<g transform="translate(25 25)">${Array.from({length:25},(_,i)=>`<rect x="${i%5*22}" y="${Math.floor(i/5)*22}" width="22" height="22" fill="${[0,4,20,24].includes(i)?'#75633d':'#fff7d8'}" stroke="#a89660"/>${i>0&&i<4?`<text x="${i*22+11}" y="16" text-anchor="middle" font-family="Georgia" font-size="15" fill="#75633d">${'BAD'[i-1]}</text>`:''}`).join('')}</g>`);
   if(kind==='words')return wrap('#f1df9d',`<rect x="27" y="65" width="108" height="25" rx="12" fill="#ed6b36" opacity=".65"/>${Array.from({length:25},(_,i)=>`<text x="${37+i%5*22}" y="${42+Math.floor(i/5)*22}" text-anchor="middle" font-family="monospace" font-size="16" fill="#75633d">${'MINDXQAZPRFOCUSLERNTPAUSE'[i]}</text>`).join('')}`);
   return wrap('#e0ddef','<g transform="rotate(-12 80 80)"><rect x="37" y="40" width="87" height="95" rx="7" fill="#afa4c8"/><rect x="32" y="29" width="87" height="95" rx="7" fill="#fffcf5" stroke="#85779d"/><text x="75" y="93" text-anchor="middle" font-family="Georgia" font-size="57" fill="#85779d">?</text></g>');
 };
@@ -68,7 +68,7 @@ function shell(title,body,label='YOUR PRACTICE SPACE'){
 }
 function openActivity(id,asCircuit=false){
   stopTimers();activeId=id;circuitMode=asCircuit;const a=item(id);if(!a)return;
-  const descriptions={signal:'Find the one symbol that differs from the others. There are 12 rounds. Aim for accuracy first; your response time is measured too.',sequence:'Nine tiles. A growing sequence. Watch the highlighted tiles, then select them in the same order. Play five levels, starting with two tiles.',rules:'Sort each object using the rule shown above it. The rule changes every four rounds. You’ll play 16 rounds.',pocket:'Fill every row, column, and 2 × 2 box with the numbers 1–4, with no repeats. Select a blank square and type a number.',sudoku:'Fill every row, column, and 3 × 3 box with the numbers 1–9, with no repeats. Select a blank square and type a number.',crossword:'A five-by-five word square. Answer five clues across and five down. Type one letter per square; use arrow keys to move.',words:'Find five words in the grid. Select the first and last letter of a word. Words may run in either direction, straight or diagonally.',read:'Read a short passage at your own pace. When you’re ready, hide it and answer three questions from memory.',cards:'Think of your answer before flipping each card. Mark whether you remembered it. This is a self-check, so be honest with yourself.',custom:'Create question-and-answer cards for something you’re learning. Your cards stay in this browser.'};
+  const descriptions={signal:'Find the one symbol that differs from the others. There are 12 rounds. Aim for accuracy first; your response time is measured too.',sequence:'Nine tiles. A growing sequence. Watch the highlighted tiles, then select them in the same order. Play five levels, starting with two tiles.',rules:'Sort each object using the rule shown above it. The rule changes every four rounds. You’ll play 16 rounds.',pocket:'Fill every row, column, and 2 × 2 box with the numbers 1–4, with no repeats. Select a blank square and type a number.',sudoku:'Fill every row, column, and 3 × 3 box with the numbers 1–9, with no repeats. Select a blank square and type a number.',crossword:'A five-by-five mini crossword with separate Across and Down clues. Select a clue, then type its answer. Shared squares connect the words.',words:'Find five words in the grid. Select the first and last letter of a word. Words may run in either direction, straight or diagonally.',read:'Read a short passage at your own pace. When you’re ready, hide it and answer three questions from memory.',cards:'Think of your answer before flipping each card. Mark whether you remembered it. This is a self-check, so be honest with yourself.',custom:'Create question-and-answer cards for something you’re learning. Your cards stay in this browser.'};
   shell(a.title,`<div class="preview-art">${art(a.art)}</div><h3>${id==='custom'?'Bring your curiosity.':'A little challenge awaits.'}</h3><p class="instructions">${descriptions[id]}</p><button class="button primary" id="begin">${id==='custom'?'Create a study set':'Let’s begin'} ${icon('arrow')}</button>`,asCircuit?`DAILY CIRCUIT · STOP ${CIRCUIT.indexOf(id)+1} OF 3`:a.tag);
   if(!dialog.open)dialog.showModal();
   $('#begin').onclick=()=>{startedAt=performance.now();({signal:playSignal,sequence:playSequence,rules:playRules,pocket:()=>playSudoku(POCKET),sudoku:()=>playSudoku(SUDOKU),crossword:playCrossword,words:playWords,read:playRead,cards:()=>playCards(defaultCards),custom:editCards})[id]();};
@@ -127,10 +127,62 @@ function playSudoku(base){
   $('#hint-grid').onclick=()=>{const i=values.findIndex((v,index)=>v!==config.solution[index]);if(i<0){$('#check-grid').click();return;}values[i]=config.solution[i];hints++;const input=$(`[data-cell="${i}"]`);input.value=values[i];input.classList.remove('wrong');input.removeAttribute('aria-invalid');input.focus();$('.feedback').classList.remove('error');$('.feedback').textContent=`Row ${Math.floor(i/size)+1}, column ${i%size+1} is ${values[i]}.`;saveDraft();};
 }
 function playCrossword(){
-  const solution=CROSSWORD.join(''),values=Array(25).fill(''),clues=['The organ that pumps blood','A glowing coal in a dying fire','Mistreat or use improperly','Sticky substance produced by some trees','A general direction or popular tendency'];
-  shell('Mini Crossword',`<p class="instructions">A starter word square: its five words read both across and down.</p><div class="crossword-layout"><div class="grid-board crossword-board" style="grid-template-columns:repeat(5,1fr)">${values.map((_,i)=>`<div class="crossword-cell">${i<5||i%5===0?`<span>${i<5?i+1:5+i/5}</span>`:''}<input data-letter="${i}" maxlength="1" aria-label="Row ${Math.floor(i/5)+1}, column ${i%5+1}" autocapitalize="characters" autocomplete="off" spellcheck="false"></div>`).join('')}</div><div class="clues"><div><h4>ACROSS</h4>${clues.map((c,i)=>`<p><b>${i===0?1:5+i}.</b> ${c}</p>`).join('')}</div><div class="down"><h4>DOWN</h4>${clues.map((c,i)=>`<p><b>${i+1}.</b> ${c}</p>`).join('')}</div></div></div><div class="play-actions"><button class="button primary" id="check-crossword">Check my crossword</button></div><p class="feedback" aria-live="polite"></p>`,'MENTAL GAMES · MINI CROSSWORD');
-  document.querySelectorAll('[data-letter]').forEach(input=>{input.oninput=()=>{const i=Number(input.dataset.letter);input.value=input.value.toUpperCase().replace(/[^A-Z]/g,'').slice(-1);values[i]=input.value;if(input.value)$(`[data-letter="${Math.min(24,i+1)}"]`)?.focus();};input.onkeydown=e=>{const i=Number(input.dataset.letter),offset={ArrowLeft:-1,ArrowRight:1,ArrowUp:-5,ArrowDown:5}[e.key];if(offset){e.preventDefault();$(`[data-letter="${Math.max(0,Math.min(24,i+offset))}"]`)?.focus();}if(e.key==='Backspace'&&!input.value)$(`[data-letter="${Math.max(0,i-1)}"]`)?.focus();};});
-  $('#check-crossword').onclick=()=>{if(values.join('')===solution){finish([['5','Words found'],['Solved','Puzzle']],'Across and down, it all comes together.');return;}let wrong=0;document.querySelectorAll('[data-letter]').forEach(input=>{const i=Number(input.dataset.letter),bad=values[i]&&values[i]!==solution[i];input.style.background=bad?'#f5d9cc':'';input.setAttribute('aria-invalid',String(!!bad));if(bad)wrong++;});$('.feedback').textContent=wrong?`${wrong} ${wrong===1?'letter needs':'letters need'} another look.`:'Your letters look good. Keep filling the grid.';$('.feedback').classList.toggle('error',wrong>0);};
+  const {size}=CROSSWORD,solution=CROSSWORD.grid.join(''),{entries,numbers}=crosswordEntries();
+  const values=Array(size*size).fill('');let active=entries.find(e=>e.direction==='across'),selected=active.cells[0];
+  const clueList=direction=>entries.filter(e=>e.direction===direction).map(e=>`<button class="crossword-clue" data-clue="${e.id}" aria-label="${e.number} ${direction}: ${esc(e.clue)}, ${e.answer.length} letters"><b>${e.number}.</b><span>${esc(e.clue)} <small>(${e.answer.length})</small></span></button>`).join('');
+  shell('Mini Crossword',`<p class="instructions">Select an Across or Down clue. Each square shares a letter between two different answers.</p><div class="crossword-current" aria-live="polite" id="crossword-prompt"></div><div class="crossword-layout"><div><div class="crossword-directions" aria-label="Typing direction"><button class="filter" data-direction="across" aria-pressed="true">Across</button><button class="filter" data-direction="down" aria-pressed="false">Down</button></div><div class="grid-board crossword-board" style="grid-template-columns:repeat(${size},1fr)">${[...solution].map((letter,i)=>letter==='#'?'<div class="crossword-cell blocked" aria-hidden="true"></div>':`<div class="crossword-cell" data-crossword-cell="${i}">${numbers[i]?`<span>${numbers[i]}</span>`:''}<input data-letter="${i}" maxlength="1" aria-label="Row ${Math.floor(i/size)+1}, column ${i%size+1}${numbers[i]?', clue '+numbers[i]:''}" autocapitalize="characters" autocomplete="off" spellcheck="false"></div>`).join('')}</div><p class="puzzle-caption">Tap a selected square to switch direction.<br>Arrow keys move; Space switches direction.</p></div><div class="clues"><div><h4>ACROSS</h4>${clueList('across')}</div><div class="down"><h4>DOWN</h4>${clueList('down')}</div></div></div><div class="play-actions"><button class="button primary" id="check-crossword">Check my crossword</button></div><p class="feedback" aria-live="polite"></p>`,'MENTAL GAMES · MINI CROSSWORD');
+  const updateSelection=()=>{
+    $('#crossword-prompt').textContent=`${active.number} ${active.direction==='across'?'Across':'Down'} · ${active.clue} (${active.answer.length})`;
+    document.querySelectorAll('[data-crossword-cell]').forEach(cell=>{const index=Number(cell.dataset.crosswordCell);cell.classList.toggle('in-word',active.cells.includes(index));cell.classList.toggle('selected',index===selected);});
+    document.querySelectorAll('[data-clue]').forEach(b=>{b.classList.toggle('active',b.dataset.clue===active.id);b.setAttribute('aria-pressed',String(b.dataset.clue===active.id));});
+    document.querySelectorAll('[data-direction]').forEach(b=>{b.classList.toggle('active',b.dataset.direction===active.direction);b.setAttribute('aria-pressed',String(b.dataset.direction===active.direction));});
+  };
+  const selectCell=(index,direction=active.direction)=>{
+    selected=index;active=entries.find(e=>e.direction===direction&&e.cells.includes(index))||entries.find(e=>e.cells.includes(index));updateSelection();
+  };
+  const moveInWord=(index,step)=>{
+    const pos=active.cells.indexOf(index),next=active.cells[pos+step];
+    if(next!==undefined){selectCell(next);$(`[data-letter="${next}"]`).focus();}
+  };
+  document.querySelectorAll('[data-clue]').forEach(b=>b.onclick=()=>{active=entries.find(e=>e.id===b.dataset.clue);selected=active.cells.find(i=>!values[i])??active.cells[0];updateSelection();$(`[data-letter="${selected}"]`).focus();});
+  document.querySelectorAll('[data-direction]').forEach(b=>b.onclick=()=>{selectCell(selected,b.dataset.direction);$(`[data-letter="${selected}"]`).focus();});
+  document.querySelectorAll('[data-letter]').forEach(input=>{
+    const index=Number(input.dataset.letter);let wasFocused=false;
+    input.addEventListener('pointerdown',()=>{wasFocused=document.activeElement===input;});
+    input.addEventListener('click',()=>{selectCell(index,wasFocused?(active.direction==='across'?'down':'across'):active.direction);wasFocused=false;input.select();});
+    input.addEventListener('focus',()=>{selectCell(index);input.select();});
+    input.addEventListener('input',()=>{
+      input.value=input.value.toUpperCase().replace(/[^A-Z]/g,'').slice(-1);values[index]=input.value;
+      input.parentElement.classList.remove('wrong');input.removeAttribute('aria-invalid');
+      if(input.value)moveInWord(index,1);
+    });
+    input.addEventListener('keydown',e=>{
+      if(/^[a-z]$/i.test(e.key)&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+        e.preventDefault();input.value=e.key.toUpperCase();values[index]=input.value;
+        input.parentElement.classList.remove('wrong');input.removeAttribute('aria-invalid');moveInWord(index,1);return;
+      }
+      if(e.key===' '){e.preventDefault();selectCell(index,active.direction==='across'?'down':'across');return;}
+      if(e.key==='Backspace'){
+        e.preventDefault();
+        if(values[index]){values[index]='';input.value='';input.parentElement.classList.remove('wrong');input.removeAttribute('aria-invalid');}
+        else{const previous=active.cells[active.cells.indexOf(index)-1];if(previous!==undefined){values[previous]='';const prev=$(`[data-letter="${previous}"]`);prev.value='';prev.parentElement.classList.remove('wrong');prev.removeAttribute('aria-invalid');selectCell(previous);prev.focus();}}
+        return;
+      }
+      const delta={ArrowLeft:-1,ArrowRight:1,ArrowUp:-size,ArrowDown:size}[e.key];
+      if(delta){
+        e.preventDefault();const direction=Math.abs(delta)===1?'across':'down';selectCell(index,direction);let next=index+delta;
+        while(next>=0&&next<values.length&&(direction==='down'||Math.floor(next/size)===Math.floor(index/size))){if(solution[next]!=='#'){selectCell(next,direction);$(`[data-letter="${next}"]`).focus();break;}next+=delta;}
+      }
+    });
+  });
+  updateSelection();
+  $('#check-crossword').onclick=()=>{
+    if([...solution].every((letter,i)=>letter==='#'||values[i]===letter)){finish([[String(entries.length),'Answers found'],['Solved','Puzzle']],'Across and down, it all comes together.');return;}
+    let wrong=0;
+    document.querySelectorAll('[data-letter]').forEach(input=>{const i=Number(input.dataset.letter),bad=!!values[i]&&values[i]!==solution[i];input.parentElement.classList.toggle('wrong',bad);input.setAttribute('aria-invalid',String(bad));if(bad)wrong++;});
+    $('.feedback').textContent=wrong?`${wrong} ${wrong===1?'letter needs':'letters need'} another look. Highlighted in coral.`:'Your letters look good. Keep filling the grid.';
+    $('.feedback').classList.toggle('error',wrong>0);
+  };
 }
 function playWords(){
   const grid=makeWordGrid(),found=new Set(),foundCells=new Set();let start=null;
